@@ -1,2 +1,255 @@
-# universal-converter
-Universal Converter — a project that blends design and logic! Built with HTML, CSS, and JavaScript, it converts distance, temperature, weight, and time with a modern touch, dark mode, and responsive design. Simple, elegant, and fully functional — just how coding should be.
+from IPython.display import HTML
+
+html_code = """
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>🔁 Convertedor Universal</title>
+  <style>
+    :root {
+      --bg-color: #f5f5f5;
+      --card-bg: #ffffff;
+      --text-color: #222;
+      --button-bg: #007bff;
+      --button-hover: #0056b3;
+      --result-bg: #e9f7ef;
+      --result-text: #2c662d;
+    }
+
+    body.dark {
+      --bg-color: #1e1e1e;
+      --card-bg: #2a2a2a;
+      --text-color: #e0e0e0;
+      --button-bg: #0d6efd;
+      --button-hover: #084298;
+      --result-bg: #2e3b2e;
+      --result-text: #a8e6a2;
+    }
+
+    body {
+      font-family: "Poppins", sans-serif;
+      background: var(--bg-color);
+      color: var(--text-color);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin: 0;
+      padding: 20px;
+      transition: background 0.3s, color 0.3s;
+    }
+
+    .converter {
+      background: var(--card-bg);
+      padding: 30px;
+      border-radius: 15px;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+      max-width: 400px;
+      width: 100%;
+      text-align: center;
+      transition: background 0.3s;
+    }
+
+    h1 {
+      color: var(--button-bg);
+      margin-bottom: 20px;
+    }
+
+    select, input, button {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 1em;
+      background: var(--card-bg);
+      color: var(--text-color);
+    }
+
+    button {
+      background: var(--button-bg);
+      color: white;
+      border: none;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    button:hover {
+      background: var(--button-hover);
+    }
+
+    #result {
+      margin-top: 20px;
+      padding: 15px;
+      background: var(--result-bg);
+      border-radius: 8px;
+      color: var(--result-text);
+      font-weight: bold;
+      transition: background 0.3s, color 0.3s;
+    }
+
+    .theme-toggle {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 1.3em;
+      color: var(--text-color);
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      transition: color 0.3s;
+    }
+
+    .theme-toggle:hover {
+      opacity: 0.7;
+    }
+  </style>
+</head>
+<body>
+  <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
+
+  <div class="converter">
+    <h1>🔁 Convertedor Universal</h1>
+
+    <select id="type" onchange="updateUnits()">
+      <option value="distance">Distância</option>
+      <option value="temperature">Temperatura</option>
+      <option value="weight">Peso</option>
+      <option value="time">Tempo</option>
+    </select>
+
+    <input type="number" id="inputValue" placeholder="Digite o valor">
+
+    <select id="fromUnit"></select>
+    <span>para</span>
+    <select id="toUnit"></select>
+
+    <button onclick="convert()">Converter</button>
+
+    <div id="result"></div>
+  </div>
+
+  <script>
+    const unitOptions = {
+      distance: [
+        { value: "km", text: "Quilômetros" },
+        { value: "miles", text: "Milhas" },
+        { value: "m", text: "Metros" },
+        { value: "cm", text: "Centímetros" }
+      ],
+      temperature: [
+        { value: "celsius", text: "Celsius (°C)" },
+        { value: "fahrenheit", text: "Fahrenheit (°F)" },
+        { value: "kelvin", text: "Kelvin (K)" }
+      ],
+      weight: [
+        { value: "kg", text: "Quilos" },
+        { value: "lb", text: "Libras" },
+        { value: "g", text: "Gramas" }
+      ],
+      time: [
+        { value: "seconds", text: "Segundos" },
+        { value: "minutes", text: "Minutos" },
+        { value: "hours", text: "Horas" }
+      ]
+    };
+
+    function updateUnits() {
+      const type = document.getElementById("type").value;
+      const fromUnit = document.getElementById("fromUnit");
+      const toUnit = document.getElementById("toUnit");
+
+      fromUnit.innerHTML = "";
+      toUnit.innerHTML = "";
+
+      unitOptions[type].forEach(u => {
+        fromUnit.add(new Option(u.text, u.value));
+        toUnit.add(new Option(u.text, u.value));
+      });
+    }
+
+    function convert() {
+      const type = document.getElementById("type").value;
+      const inputValue = parseFloat(document.getElementById("inputValue").value);
+      const fromUnit = document.getElementById("fromUnit").value;
+      const toUnit = document.getElementById("toUnit").value;
+
+      if (isNaN(inputValue)) {
+        document.getElementById("result").innerHTML =
+          "<p style='color:red;'>Digite um valor válido!</p>";
+        return;
+      }
+
+      let result;
+
+      switch (type) {
+        case "distance": result = convertDistance(inputValue, fromUnit, toUnit); break;
+        case "temperature": result = convertTemperature(inputValue, fromUnit, toUnit); break;
+        case "weight": result = convertWeight(inputValue, fromUnit, toUnit); break;
+        case "time": result = convertTime(inputValue, fromUnit, toUnit); break;
+      }
+
+      document.getElementById("result").innerHTML =
+        `<h3>Resultado: ${result.toFixed(2)} ${getUnitName(toUnit)}</h3>`;
+    }
+
+    function convertDistance(v, from, to) {
+      const meters = from === "km" ? v * 1000 :
+                     from === "miles" ? v * 1609.34 :
+                     from === "cm" ? v / 100 :
+                     v;
+      if (to === "km") return meters / 1000;
+      if (to === "miles") return meters / 1609.34;
+      if (to === "cm") return meters * 100;
+      return meters;
+    }
+
+    function convertTemperature(v, from, to) {
+      if (from === to) return v;
+      if (from === "celsius" && to === "fahrenheit") return v * 9/5 + 32;
+      if (from === "fahrenheit" && to === "celsius") return (v - 32) * 5/9;
+      if (from === "celsius" && to === "kelvin") return v + 273.15;
+      if (from === "kelvin" && to === "celsius") return v - 273.15;
+      if (from === "fahrenheit" && to === "kelvin") return (v - 32) * 5/9 + 273.15;
+      if (from === "kelvin" && to === "fahrenheit") return (v - 273.15) * 9/5 + 32;
+    }
+
+    function convertWeight(v, from, to) {
+      const kg = from === "lb" ? v / 2.20462 :
+                 from === "g" ? v / 1000 :
+                 v;
+      if (to === "lb") return kg * 2.20462;
+      if (to === "g") return kg * 1000;
+      return kg;
+    }
+
+    function convertTime(v, from, to) {
+      const seconds = from === "minutes" ? v * 60 :
+                      from === "hours" ? v * 3600 :
+                      v;
+      if (to === "minutes") return seconds / 60;
+      if (to === "hours") return seconds / 3600;
+      return seconds;
+    }
+
+    function getUnitName(u) {
+      const all = Object.values(unitOptions).flat();
+      const found = all.find(opt => opt.value === u);
+      return found ? found.text.toLowerCase() : u;
+    }
+
+    // 🌙 Alternar tema
+    function toggleTheme() {
+      document.body.classList.toggle("dark");
+      const btn = document.querySelector(".theme-toggle");
+      btn.textContent = document.body.classList.contains("dark") ? "☀️" : "🌙";
+    }
+
+    updateUnits();
+  </script>
+</body>
+</html>
+"""
+
+display(HTML(html_code))
